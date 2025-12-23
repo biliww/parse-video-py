@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main-my" ]
 
+env:
+  image_name_build: biliw
+  IMAGE_NAME: parse-video-py:latest
+
 jobs:
   build:
     name: Build Docker Image
@@ -35,6 +39,6 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/parse-video-py:latest
+          tags: ${{ env.image_name_build }}/${{ env.IMAGE_NAME }}
           platforms: |
             linux/amd64
