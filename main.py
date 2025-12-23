@@ -26,13 +26,13 @@ origins = [
     "https://admin.your-domain.com",  # 管理后台
 ]
 # 允许所有来源（开发环境常用，生产环境不推荐）
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源
-    allow_credentials=True,  # 允许携带凭证（如 Cookie、Token）
-    allow_methods=["*"],  # 允许所有 HTTP 方法
-    allow_headers=["*"],  # 允许所有 HTTP 头
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # 允许所有来源
+#     allow_credentials=True,  # 允许携带凭证（如 Cookie、Token）
+#     allow_methods=["*"],  # 允许所有 HTTP 方法
+#     allow_headers=["*"],  # 允许所有 HTTP 头
+# )
 
 def get_auth_dependency() -> list[Depends]:
     """
