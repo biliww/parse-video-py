@@ -126,8 +126,8 @@
 
     <div class="flex justify-between items-center w-full">
         <div class="space-y-1">
-            <h1 class="text-2xl font-bold tracking-tight">Media Parser</h1>
-            <p class="text-sm text-muted-foreground">支持抖音、小红书视频/图集/实况解析</p>
+            <h1 class="text-2xl font-bold tracking-tight">媒体无水印解析</h1>
+            <p class="text-sm text-muted-foreground">支持抖音、小红书等常见媒体 无水印 视频/图集/实况解析</p>
         </div>
         <button @click="toggleTheme" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
             <i v-if="isDark" class="ph ph-sun text-xl"></i>
@@ -318,7 +318,7 @@
 
                     const encodedUrl = encodeURIComponent(realUrl);
                     // 假设这是你的本地接口地址
-                    const apiUrl = `http://127.0.0.1:8000/video/share/url/parse?url=${encodedUrl}`;
+                    const apiUrl = `/video/share/url/parse?url=${encodedUrl}`;
 
                     const response = await fetch(apiUrl);
                     if (!response.ok) {
