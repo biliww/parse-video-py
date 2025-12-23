@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>视频/图集去水印解析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                    },
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* CSS 变量定义 Shadcn 风格 */
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 240 10% 3.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 240 10% 3.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 240 10% 3.9%;
+            --primary: 240 5.9% 10%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 240 4.8% 95.9%;
+            --secondary-foreground: 240 5.9% 10%;
+            --muted: 240 4.8% 95.9%;
+            --muted-foreground: 240 3.8% 46.1%;
+            --accent: 240 4.8% 95.9%;
+            --accent-foreground: 240 5.9% 10%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 5.9% 90%;
+            --input: 240 5.9% 90%;
+            --ring: 240 10% 3.9%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 0 0% 98%;
+            --primary-foreground: 240 5.9% 10%;
+            --secondary: 240 3.7% 15.3%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 240 3.7% 15.3%;
+            --muted-foreground: 240 5% 64.9%;
+            --accent: 240 3.7% 15.3%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 3.7% 15.9%;
+            --input: 240 3.7% 15.9%;
+            --ring: 240 4.9% 83.9%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col items-center py-10 px-4 transition-colors duration-300">
+
+<div id="app" class="w-full max-w-3xl space-y-8">
+
+    <div class="flex justify-between items-center w-full">
+        <div class="space-y-1">
+            <h1 class="text-2xl font-bold tracking-tight">Media Parser</h1>
+            <p class="text-sm text-muted-foreground">支持抖音、小红书视频/图集/实况解析</p>
+        </div>
+        <button @click="toggleTheme" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
+            <i v-if="isDark" class="ph ph-sun text-xl"></i>
+            <i v-else class="ph ph-moon text-xl"></i>
+        </button>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+        <input
+            v-model="inputUrl"
+            type="text"
+            placeholder="粘贴分享链接，例如：http://xhslink.com/..."
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            @keyup.enter="handleParse"
+        >
+        <button
+            @click="handleParse"
+            :disabled="loading"
+            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2"
+        >
+            <i v-if="loading" class="ph ph-spinner animate-spin mr-2"></i>
+            <span v-else class="mr-2"><i class="ph ph-magic-wand"></i></span>
+            解析
+        </button>
+    </div>
+
+    <div v-if="error" class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm flex items-center gap-2 border border-red-200 dark:border-red-900">
+        <i class="ph ph-warning-circle text-lg"></i>
+        {{ error }}
+    </div>
+
+    <div v-if="data" class="space-y-6 animate-fade-in-up">
+
+        <div v-if="data.author" class="flex items-center gap-4 p-4 rounded-lg border border-border bg-card shadow-sm">
+            <div class="relative w-12 h-12">
+                <img :src="data.author.avatar" alt="Avatar" class="w-full h-full object-cover rounded-full border border-border">
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-lg truncate">{{ data.author.name }}</h3>
+                <p class="text-xs text-muted-foreground font-mono">UID: {{ data.author.uid }}</p>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <h2 v-if="data.title" class="text-xl font-bold leading-tight">{{ data.title }}</h2>
+
+            <div v-if="data.cover_url" class="group relative rounded-xl overflow-hidden border border-border bg-muted aspect-video md:aspect-[21/9] shadow-sm">
+                <img :src="data.cover_url" class="w-full h-full object-cover" alt="Cover">
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                    <button @click="downloadFile(data.cover_url, 'cover_' + generateFileName())" class="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform flex items-center gap-2">
+                        <i class="ph ph-download-simple"></i> 下载封面
+                    </button>
+                </div>
+                <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/60 text-white text-xs rounded backdrop-blur-md">
+                    封面预览
+                </div>
+            </div>
+        </div>
+
+        <div v-if="data.video_url" class="space-y-2">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="ph ph-film-strip text-primary"></i>
+                <h3 class="font-semibold text-sm">视频内容</h3>
+            </div>
+            <div class="group relative rounded-xl overflow-hidden border border-border bg-black shadow-md">
+                <video controls class="w-full max-h-[600px] mx-auto">
+                    <source :src="data.video_url" type="video/mp4">
+                    您的浏览器不支持 Video 标签。
+                </video>
+                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button @click="downloadFile(data.video_url, 'video_' + generateFileName() + '.mp4')" class="bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/90 transition-transform hover:scale-110">
+                        <i class="ph ph-download-simple text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="data.images && data.images.length > 0" class="space-y-2">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="ph ph-images text-primary"></i>
+                <h3 class="font-semibold text-sm">
+                    {{ hasLivePhoto ? '实况图集 (Live Photo)' : '高清图集' }}
+                </h3>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-for="(img, index) in data.images" :key="index" class="group relative break-inside-avoid">
+                    <div class="relative rounded-lg overflow-hidden border border-border bg-muted shadow-sm aspect-[3/4]">
+                        <img :src="img.url" v-if="!img.live_photo_url" class="w-full h-full object-cover" loading="lazy">
+                        <div v-if="img.live_photo_url" class="absolute top-2 right-2 px-2 py-1 bg-black/60 text-white text-xs rounded backdrop-blur-md">
+                             <video   autoplay muted loop playsinline :src="img.live_photo_url" >
+                            </video>
+                        </div>
+
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
+                            <button
+                                v-if="!img.live_photo_url"
+                                @click="downloadFile(img.url, `image_${index}_${generateFileName()}`)"
+                                class="bg-white text-black px-4 py-2 rounded-full text-xs font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                            >
+                                <i class="ph ph-download-simple"></i> 下载图片
+                            </button>
+
+                            <div v-else class="flex flex-col gap-2">
+                                <button
+                                    @click="downloadLivePhoto(img.url, img.live_photo_url, index)"
+                                    class="bg-white text-black px-4 py-2 rounded-full text-xs font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                                >
+                                    <i class="ph ph-aperture"></i> 下载实况 (图+视频)
+                                </button>
+                                <div class="text-[10px] text-white/80 text-center">包含 .jpg 和 .mp4</div>
+                            </div>
+                        </div>
+
+                        <div v-if="img.live_photo_url" class="absolute top-2 left-2 px-2 py-1 bg-white/90 text-black text-[10px] font-bold rounded-md flex items-center gap-1">
+                            <i class="ph ph-record-fill text-red-500"></i> LIVE
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div v-else-if="!loading && !error" class="text-center py-20 text-muted-foreground opacity-50">
+        <i class="ph ph-share-network text-6xl mb-4 block mx-auto"></i>
+        <p>输入链接开始解析</p>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+        setup() {
+            const inputUrl = ref('');
+            const loading = ref(false);
+            const error = ref('');
+            const result = ref(null);
+            const isDark = ref(false);
+
+            // 初始化暗黑模式
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                isDark.value = true;
+                document.documentElement.classList.add('dark');
+            }
+
+            const toggleTheme = () => {
+                isDark.value = !isDark.value;
+                if (isDark.value) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            };
+
+            const data = computed(() => {
+                return result.value ? result.value.data : null;
+            });
+
+            const hasLivePhoto = computed(() => {
+                if (!data.value || !data.value.images) return false;
+                return data.value.images.some(img => img.live_photo_url && img.live_photo_url !== "");
+            });
+
+            // 正则提取逻辑
+            const extractUrl = (text) => {
+                let regex = /http[s]?:\/\/[\w.-]+[\w\/-]*[\w.-]*\??[\w=&:\-\+\%]*[/]*/;
+                const match = text.match(regex);
+                return match ? match[0] : null;
+            };
+
+            const handleParse = async () => {
+                if (!inputUrl.value) return;
+
+                loading.value = true;
+                error.value = '';
+                result.value = null;
+
+                try {
+                    const realUrl = extractUrl(inputUrl.value);
+                    if (!realUrl) {
+                        throw new Error('未检测到有效的 http/https 链接');
+                    }
+
+                    const encodedUrl = encodeURIComponent(realUrl);
+                    const apiUrl = `http://127.0.0.1:8000/video/share/url/parse?url=${encodedUrl}`;
+
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`请求失败: ${response.statusText}`);
+                    }
+
+                    const json = await response.json();
+
+                    if (json.code === 200) {
+                        result.value = json;
+                    } else {
+                        throw new Error(json.msg || '解析失败，未知错误');
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    error.value = err.message || '请求发生错误，请检查接口服务是否开启 (127.0.0.1:8000)';
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            // 生成随机文件名后缀
+            const generateFileName = () => {
+                return Math.random().toString(36).substring(2, 8);
+            };
+
+            // 下载单个文件
+            const downloadFile = async (url, filename) => {
+                if(!url) return;
+                try {
+                    // 尝试 fetch blob 下载以避免浏览器直接打开图片
+                    const res = await fetch(url);
+                    const blob = await res.blob();
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+
+                    // 简单的后缀处理
+                    let extension = '';
+                    if (blob.type === 'image/jpeg') extension = '.jpg';
+                    else if (blob.type === 'image/png') extension = '.png';
+                    else if (blob.type === 'video/mp4') extension = '.mp4';
+
+                    if (!filename.includes('.')) filename += extension;
+
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                } catch (e) {
+                    // 如果跨域CORS被拦截，降级为新窗口打开
+                    console.warn("Blob download failed, opening in new tab", e);
+                    window.open(url, '_blank');
+                }
+            };
+
+            // 下载实况 (下载两份文件)
+            const downloadLivePhoto = async (imgUrl, videoUrl, index) => {
+                const baseName = `live_photo_${index}_${generateFileName()}`;
+
+                // 触发下载图片
+                await downloadFile(imgUrl, baseName + '.jpg');
+
+                // 稍微延迟一下，防止浏览器拦截连续下载
+                setTimeout(() => {
+                    downloadFile(videoUrl, baseName + '.mp4');
+                }, 2000);
+            };
+
+            return {
+                inputUrl,
+                loading,
+                error,
+                data,
+                isDark,
+                hasLivePhoto,
+                toggleTheme,
+                handleParse,
+                downloadFile,
+                downloadLivePhoto,
+                generateFileName
+            };
+        }
+    }).mount('#app');
+</script>
+
+<style>
+    /* 简单的淡入动画 */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+</style>
+</body>
+</html>

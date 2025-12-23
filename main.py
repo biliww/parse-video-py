@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 from fastapi_mcp import FastApiMCP
-
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 mcp = FastApiMCP(app)
@@ -18,6 +18,21 @@ mcp.mount_http()
 
 templates = Jinja2Templates(directory="templates")
 
+# 仅允许特定来源（更安全）
+origins = [
+    "http://localhost:8000",  # 前端开发服务器
+    "http://127.0.0.1:8000",  # 前端开发服务器
+    "https://your-production-domain.com",  # 生产环境前端域名
+    "https://admin.your-domain.com",  # 管理后台
+]
+# 允许所有来源（开发环境常用，生产环境不推荐）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源
+    allow_credentials=True,  # 允许携带凭证（如 Cookie、Token）
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有 HTTP 头
+)
 
 def get_auth_dependency() -> list[Depends]:
     """
@@ -58,7 +73,7 @@ async def read_item(request: Request):
         request=request,
         name="index.html",
         context={
-            "title": "github.com/wujunwei928/parse-video-py Demo",
+            "title": "无水印解析",
         },
     )
 

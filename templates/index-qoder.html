@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频链接解析工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+        
+        .dark body {
+            background-color: #0a0a0a;
+            color: #f3f4f6;
+        }
+        
+        .light body {
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .dark .card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+        }
+        
+        .light .card {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .input-field {
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+        }
+        
+        .dark .input-field {
+            background-color: #111827;
+            border: 1px solid #374151;
+            color: #f3f4f6;
+        }
+        
+        .light .input-field {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background-color: #0ea5e9;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0284c7;
+        }
+        
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        .download-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+        }
+        
+        .media-container:hover .download-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .media-item {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .media-item:hover {
+            transform: scale(1.02);
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        .dark .skeleton {
+            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+        }
+        
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">视频链接解析工具</h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                支持抖音、小红书等平台视频链接解析，去除水印，获取原视频/图集/实况图
+            </p>
+        </header>
+        
+        <!-- Search Section -->
+        <div class="card p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-4">
+                <input 
+                    type="text" 
+                    id="urlInput" 
+                    placeholder="请输入抖音、小红书等平台的分享链接..." 
+                    class="input-field flex-1 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                <button 
+                    id="parseBtn" 
+                    class="btn btn-primary px-6 py-3 flex items-center justify-center gap-2">
+                    <i class="fas fa-search"></i>
+                    解析
+                </button>
+            </div>
+            <div id="loadingIndicator" class="mt-4 hidden">
+                <div class="flex items-center justify-center gap-2 text-primary-500">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>正在解析视频信息...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Result Section -->
+        <div id="resultSection" class="hidden">
+            <!-- Author Info -->
+            <div id="authorInfo" class="card p-6 mb-8">
+                <div class="flex items-center gap-4">
+                    <img id="authorAvatar" src="" alt="作者头像" class="w-16 h-16 rounded-full object-cover">
+                    <div>
+                        <h3 id="authorName" class="text-xl font-semibold"></h3>
+                        <p id="authorUid" class="text-gray-500 dark:text-gray-400 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Info -->
+            <div id="contentInfo" class="card p-6 mb-8">
+                <h2 id="videoTitle" class="text-2xl font-bold mb-4"></h2>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="media-container relative w-full md:w-1/3">
+                        <img id="coverImage" src="" alt="视频封面" class="w-full h-auto rounded-lg object-cover media-item">
+                        <button id="downloadCoverBtn" class="download-btn">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1">
+                        <div id="videoPlayer" class="hidden mb-4">
+                            <video id="videoElement" controls class="w-full rounded-lg"></video>
+                        </div>
+                        <div id="musicInfo" class="mb-4 hidden">
+                            <h4 class="font-semibold mb-2">背景音乐</h4>
+                            <audio id="musicElement" controls class="w-full"></audio>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gallery Section -->
+            <div id="gallerySection" class="card p-6 mb-8 hidden">
+                <h3 class="text-xl font-semibold mb-4">图集内容</h3>
+                <div id="galleryContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Gallery items will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="errorMessage" class="card p-6 mb-8 hidden text-red-500">
+                <p id="errorText"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 正则表达式解析URL
+        function extractUrl(text) {
+            let regex = /http[s]?:\/\/[\w.-]+[\w\/-]*[\w.-]*\??[\w=&:\-\+\%]*[/]*/;
+            let match = text.match(regex);
+            return match ? match[0] : null;
+        }
+        
+        // API调用函数
+        async function parseVideoUrl(url) {
+            try {
+                const encodedUrl = encodeURIComponent(url);
+                const response = await fetch(`/video/share/url/parse?url=${encodedUrl}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('解析视频链接时出错:', error);
+                throw error;
+            }
+        }
+        
+        // 显示结果
+        function displayResult(data) {
+            const resultSection = document.getElementById('resultSection');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (data.code !== 200) {
+                errorMessage.classList.remove('hidden');
+                document.getElementById('errorText').textContent = data.msg || '解析失败';
+                resultSection.classList.add('hidden');
+                return;
+            }
+            
+            errorMessage.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            
+            const videoData = data.data;
+            
+            // 显示作者信息
+            if (videoData.author) {
+                document.getElementById('authorInfo').classList.remove('hidden');
+                document.getElementById('authorName').textContent = videoData.author.name || '未知作者';
+                document.getElementById('authorUid').textContent = `ID: ${videoData.author.uid || 'N/A'}`;
+                document.getElementById('authorAvatar').src = videoData.author.avatar || 'https://via.placeholder.com/64';
+            } else {
+                document.getElementById('authorInfo').classList.add('hidden');
+            }
+            
+            // 显示内容信息
+            document.getElementById('videoTitle').textContent = videoData.title || '无标题';
+            
+            // 显示封面
+            if (videoData.cover_url) {
+                document.getElementById('coverImage').src = videoData.cover_url;
+                document.getElementById('downloadCoverBtn').onclick = () => downloadFile(videoData.cover_url, 'cover');
+            }
+            
+            // 处理视频
+            if (videoData.video_url) {
+                document.getElementById('videoPlayer').classList.remove('hidden');
+                document.getElementById('videoElement').src = videoData.video_url;
+                
+                // 添加视频下载功能
+                const videoElement = document.getElementById('videoElement');
+                videoElement.addEventListener('mouseover', function() {
+                    // 添加下载按钮到视频元素
+                    if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('download-btn')) {
+                        const downloadBtn = document.createElement('button');
+                        downloadBtn.className = 'download-btn';
+                        downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+                        downloadBtn.onclick = () => downloadFile(videoData.video_url, 'video');
+                        this.parentNode.appendChild(downloadBtn);
+                    }
+                });
+            } else {
+                document.getElementById('videoPlayer').classList.add('hidden');
+            }
+            
+            // 处理音乐
+            if (videoData.music_url) {
+                document.getElementById('musicInfo').classList.remove('hidden');
+                document.getElementById('musicElement').src = videoData.music_url;
+            } else {
+                document.getElementById('musicInfo').classList.add('hidden');
+            }
+            
+            // 处理图集
+            if (videoData.images && videoData.images.length > 0) {
+                document.getElementById('gallerySection').classList.remove('hidden');
+                const galleryContainer = document.getElementById('galleryContainer');
+                galleryContainer.innerHTML = '';
+                
+                videoData.images.forEach((image, index) => {
+                    const mediaItem = document.createElement('div');
+                    mediaItem.className = 'media-container relative group';
+                    
+                    if (image.live_photo_url) {
+                        // 实况图
+                        mediaItem.innerHTML = `
+                            <div class="relative">
+                                <img src="${image.url}" alt="实况图 ${index + 1}" class="w-full h-48 object-cover rounded-lg media-item">
+                                <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span class="text-white text-sm bg-black bg-opacity-50 px-2 py-1 rounded">实况图</span>
+                                </div>
+                            </div>
+                            <button class="download-btn" onclick="downloadLivePhoto('${image.url}', '${image.live_photo_url}', ${index + 1})">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        `;
+                    } else {
+                        // 普通图片
+                        mediaItem.innerHTML = `
+                            <img src="${image.url}" alt="图片 ${index + 1}" class="w-full h-48 object-cover rounded-lg media-item">
+                            <button class="download-btn" onclick="downloadFile('${image.url}', 'image${index + 1}')">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        `;
+                    }
+                    
+                    galleryContainer.appendChild(mediaItem);
+                });
+            } else {
+                document.getElementById('gallerySection').classList.add('hidden');
+            }
+        }
+        
+        // 下载文件
+        function downloadFile(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        // 下载实况图
+        function downloadLivePhoto(imageUrl, videoUrl, index) {
+            // 下载图片
+            downloadFile(imageUrl, `livephoto_image_${index}.jpg`);
+            // 下载视频
+            downloadFile(videoUrl, `livephoto_video_${index}.mp4`);
+        }
+        
+        // 事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            const parseBtn = document.getElementById('parseBtn');
+            const urlInput = document.getElementById('urlInput');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            parseBtn.addEventListener('click', async function() {
+                const inputUrl = urlInput.value.trim();
+                
+                if (!inputUrl) {
+                    alert('请输入视频链接');
+                    return;
+                }
+                
+                // 解析URL
+                const extractedUrl = extractUrl(inputUrl);
+                if (!extractedUrl) {
+                    alert('无法从输入中提取有效的URL');
+                    return;
+                }
+                
+                // 显示加载指示器
+                loadingIndicator.classList.remove('hidden');
+                
+                try {
+                    // 调用API
+                    const result = await parseVideoUrl(extractedUrl);
+                    displayResult(result);
+                } catch (error) {
+                    document.getElementById('errorMessage').classList.remove('hidden');
+                    document.getElementById('errorText').textContent = '解析失败: ' + error.message;
+                    document.getElementById('resultSection').classList.add('hidden');
+                } finally {
+                    // 隐藏加载指示器
+                    loadingIndicator.classList.add('hidden');
+                }
+            });
+            
+            // 支持回车键解析
+            urlInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    parseBtn.click();
+                }
+            });
+            
+            // 暗色模式切换
+            const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            if (darkModeMediaQuery.matches) {
+                document.body.classList.add('dark');
+            }
+            
+            darkModeMediaQuery.addListener(function(e) {
+                if (e.matches) {
+                    document.body.classList.add('dark');
+                } else {
+                    document.body.classList.remove('dark');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

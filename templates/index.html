@@ -6,6 +6,8 @@
     <meta name="renderer" content="webkit"/>
     <meta name="force-rendering" content="webkit"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="referrer" content="no-referrer">
+
     <title>{{ title }}</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdui@1.0.0/dist/css/mdui.min.css"/>
@@ -2843,7 +2845,7 @@ function setValue() {
     var data = document.getElementById("url").value;
     let regex = /http[s]?:\/\/[\w.-]+[\w\/-]*[\w.-]*\??[\w=&:\-\+\%]*[/]*/;
     var v = data.match(regex)[0];
-    console.log(v);
+    console.log("解析后的地址:"+v);
 
     var xmlhttp;
     if (window.XMLHttpRequest) {

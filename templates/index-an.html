@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频解析工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --primary: 222.2 47.4% 11.2%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 222.2 84% 4.9%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --primary: 210 40% 98%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 212.7 26.8% 83.9%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: hsl(var(--secondary));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: hsl(var(--foreground));
+        }
+
+        .theme-toggle:hover {
+            background: hsl(var(--accent));
+        }
+
+        .search-section {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 16px;
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring) / 0.2);
+        }
+
+        .input-group input::placeholder {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .btn {
+            padding: 10px 24px;
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .spinner {
+            border: 3px solid hsl(var(--border));
+            border-top-color: hsl(var(--primary));
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .author-section {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .author-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .author-info h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .author-info p {
+            color: hsl(var(--muted-foreground));
+            font-size: 14px;
+        }
+
+        .content-section {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .content-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .cover-container {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .cover-container img {
+            width: 100%;
+            display: block;
+        }
+
+        .download-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .cover-container:hover .download-overlay,
+        .media-item:hover .download-overlay {
+            opacity: 1;
+        }
+
+        .download-btn {
+            background: white;
+            color: #222;
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .media-section {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+
+        .media-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .media-item {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: hsl(var(--muted));
+        }
+
+        .media-item img,
+        .media-item video {
+            width: 100%;
+            display: block;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-top: 16px;
+        }
+
+        .dark .error {
+            background: #4a1f1f;
+            color: #ff6b6b;
+            border-color: #6b2929;
+        }
+
+        .live-photo-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .input-group input {
+                min-width: 100%;
+            }
+
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
+            }
+
+            .author-section {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .media-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 视频解析工具</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙 深色模式</span>
+            </button>
+        </div>
+
+        <div class="search-section">
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="请粘贴抖音或小红书的分享链接..." onkeypress="handleKeyPress(event)">
+                <button class="btn" onclick="parseUrl()" id="parseBtn">
+                    <span id="btnText">解析</span>
+                </button>
+            </div>
+            <div id="errorMsg"></div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>正在解析中...</p>
+        </div>
+
+        <div id="results" class="results">
+            <div id="authorSection"></div>
+            <div id="contentSection"></div>
+            <div id="mediaSection"></div>
+        </div>
+    </div>
+
+    <script>
+        // 主题切换
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                themeIcon.textContent = '🌙 深色模式';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                themeIcon.textContent = '☀️ 浅色模式';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // 初始化主题
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').textContent = '☀️ 浅色模式';
+            }
+        }
+
+        // 回车键触发解析
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                parseUrl();
+            }
+        }
+
+        // 解析URL
+        async function parseUrl() {
+            const input = document.getElementById('urlInput').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const parseBtn = document.getElementById('parseBtn');
+
+            // 清空错误信息
+            errorMsg.innerHTML = '';
+            results.classList.remove('show');
+
+            if (!input) {
+                errorMsg.innerHTML = '<div class="error">请输入分享链接</div>';
+                return;
+            }
+
+            // 使用正则表达式提取URL
+            const regex = /http[s]?:\/\/[\w.-]+[\w\/-]*[\w.-]*\??[\w=&:\-\+\%]*[/]*/;
+            const match = input.match(regex);
+
+            if (!match) {
+                errorMsg.innerHTML = '<div class="error">未找到有效的URL链接</div>';
+                return;
+            }
+
+            const extractedUrl = match[0];
+            const encodedUrl = encodeURIComponent(extractedUrl);
+            const apiUrl = `http://127.0.0.1:8000/video/share/url/parse?url=${encodedUrl}`;
+
+            // 显示加载状态
+            loading.style.display = 'block';
+            parseBtn.disabled = true;
+
+            try {
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+
+                loading.style.display = 'none';
+                parseBtn.disabled = false;
+
+                if (result.code === 200 && result.data) {
+                    displayResults(result.data);
+                } else {
+                    errorMsg.innerHTML = `<div class="error">${result.msg || '解析失败'}</div>`;
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                parseBtn.disabled = false;
+                errorMsg.innerHTML = `<div class="error">请求失败: ${error.message}</div>`;
+            }
+        }
+
+        // 显示结果
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            const authorSection = document.getElementById('authorSection');
+            const contentSection = document.getElementById('contentSection');
+            const mediaSection = document.getElementById('mediaSection');
+
+            // 清空之前的内容
+            authorSection.innerHTML = '';
+            contentSection.innerHTML = '';
+            mediaSection.innerHTML = '';
+
+            // 显示作者信息
+            if (data.author && data.author.name) {
+                authorSection.innerHTML = `
+                    <div class="author-section">
+                        ${data.author.avatar ? `<img src="${data.author.avatar}" alt="${data.author.name}" class="author-avatar">` : ''}
+                        <div class="author-info">
+                            <h3>${data.author.name}</h3>
+                            ${data.author.uid ? `<p>ID: ${data.author.uid}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 显示内容信息
+            let contentHtml = '<div class="content-section">';
+            if (data.title) {
+                contentHtml += `<div class="content-title">${data.title}</div>`;
+            }
+            if (data.cover_url) {
+                contentHtml += `
+                    <div class="cover-container">
+                        <img src="${data.cover_url}" alt="封面">
+                        <div class="download-overlay">
+                            <button class="download-btn" onclick="downloadFile('${data.cover_url}', 'cover.jpg')">
+                                📥 下载封面
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            contentHtml += '</div>';
+            contentSection.innerHTML = contentHtml;
+
+            // 显示媒体内容
+            let mediaHtml = '<div class="media-section">';
+
+            // 视频
+            if (data.video_url) {
+                mediaHtml += `
+                    <h3>📹 视频</h3>
+                    <div class="media-grid">
+                        <div class="media-item">
+                            <video src="${data.video_url}" controls></video>
+                            <div class="download-overlay">
+                                <button class="download-btn" onclick="downloadFile('${data.video_url}', 'video.mp4')">
+                                    📥 下载视频
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 图集和实况图
+            if (data.images && data.images.length > 0) {
+                const hasLivePhoto = data.images.some(img => img.live_photo_url);
+                mediaHtml += `<h3>${hasLivePhoto ? '🎞️ 实况图' : '🖼️ 图集'}</h3>`;
+                mediaHtml += '<div class="media-grid">';
+
+                data.images.forEach((img, index) => {
+                    const isLivePhoto = img.live_photo_url;
+                    mediaHtml += `
+                        <div class="media-item">
+                            ${isLivePhoto ? '<span class="live-photo-badge">Live Photo</span>' : ''}
+                            <img src="${img.url}" alt="图片 ${index + 1}">
+                            <div class="download-overlay">
+                                ${isLivePhoto ? `
+                                    <button class="download-btn" onclick="downloadLivePhoto('${img.url}', '${img.live_photo_url}', ${index})">
+                                        📥 下载实况图
+                                    </button>
+                                ` : `
+                                    <button class="download-btn" onclick="downloadFile('${img.url}', 'image_${index + 1}.jpg')">
+                                        📥 下载图片
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                mediaHtml += '</div>';
+            }
+
+            mediaHtml += '</div>';
+            mediaSection.innerHTML = mediaHtml;
+
+            results.classList.add('show');
+        }
+
+        // 下载文件
+        function downloadFile(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 下载实况图（图片+视频）
+        async function downloadLivePhoto(imageUrl, videoUrl, index) {
+            // 下载图片
+            downloadFile(imageUrl, `livephoto_${index + 1}.jpg`);
+
+            // 延迟一下再下载视频，避免浏览器阻止多个下载
+            setTimeout(() => {
+                downloadFile(videoUrl, `livephoto_${index + 1}.mp4`);
+            }, 500);
+        }
+
+        // 页面加载时初始化主题
+        initTheme();
+    </script>
+</body>
+
+</html>
