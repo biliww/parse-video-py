@@ -127,7 +127,7 @@
         <input
             v-model="inputUrl"
             type="text"
-            placeholder="粘贴分享链接，例如：http://xhslink.com/..."
+            placeholder="粘贴分享链接~"
             class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             @keyup.enter="handleParse"
         >
@@ -162,8 +162,8 @@
         <div class="space-y-4">
             <h2 v-if="data.title" class="text-xl font-bold leading-tight">{{ data.title }}</h2>
 
-            <div v-if="data.cover_url" class="group relative rounded-xl overflow-hidden border border-border bg-muted aspect-video md:aspect-[21/9] shadow-sm">
-                <img :src="data.cover_url" class="w-full h-full object-cover" alt="Cover">
+            <div v-if="data.cover_url" class="group relative rounded-xl overflow-hidden border border-border bg-muted max-w-full shadow-sm flex items-center justify-center">
+                <img :src="data.cover_url" class="max-w-full max-h-[400px] object-contain" alt="Cover">
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                     <button @click="downloadFile(data.cover_url, 'cover_' + generateFileName())" class="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform flex items-center gap-2">
                         <i class="ph ph-download-simple"></i> 下载封面
@@ -224,9 +224,9 @@
                                     @click="downloadLivePhoto(img.url, img.live_photo_url, index)"
                                     class="bg-white text-black px-4 py-2 rounded-full text-xs font-medium hover:scale-105 transition-transform flex items-center gap-2"
                                 >
-                                    <i class="ph ph-aperture"></i> 下载实况视频
+                                    <i class="ph ph-aperture"></i> 下载实况
                                 </button>
-                                <div class="text-[10px] text-white/80 text-center">仅下载 .mp4 视频</div>
+{#                                <div class="text-[10px] text-white/80 text-center">仅下载 .mp4 视频</div>#}
                             </div>
                         </div>
 
