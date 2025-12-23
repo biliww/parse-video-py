@@ -204,12 +204,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div v-for="(img, index) in data.images" :key="index" class="group relative break-inside-avoid">
                     <div class="relative rounded-lg overflow-hidden border border-border bg-muted shadow-sm aspect-[3/4]">
-                        <img :src="img.url" v-if="!img.live_photo_url" class="w-full h-full object-cover" loading="lazy">
-                        <div v-if="img.live_photo_url" class="absolute top-2 right-2 px-2 py-1 bg-black/60 text-white text-xs rounded backdrop-blur-md">
-                             <video   autoplay muted loop playsinline :src="img.live_photo_url" >
-                            </video>
+                        <div v-if="img.live_photo_url" class="w-full h-full">
+                            <video autoplay muted  playsinline :src="img.live_photo_url" class="w-full h-full object-cover"></video>
                         </div>
+                        <img v-else :src="img.url" class="w-full h-full object-cover" loading="lazy">
 
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
                         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
                             <button
                                 v-if="!img.live_photo_url"
@@ -224,9 +224,9 @@
                                     @click="downloadLivePhoto(img.url, img.live_photo_url, index)"
                                     class="bg-white text-black px-4 py-2 rounded-full text-xs font-medium hover:scale-105 transition-transform flex items-center gap-2"
                                 >
-                                    <i class="ph ph-aperture"></i> 下载实况 (图+视频)
+                                    <i class="ph ph-aperture"></i> 下载实况视频
                                 </button>
-                                <div class="text-[10px] text-white/80 text-center">包含 .jpg 和 .mp4</div>
+                                <div class="text-[10px] text-white/80 text-center">仅下载 .mp4 视频</div>
                             </div>
                         </div>
 
@@ -361,17 +361,12 @@
                 }
             };
 
-            // 下载实况 (下载两份文件)
+            // 下载实况视频 (仅下载视频)
             const downloadLivePhoto = async (imgUrl, videoUrl, index) => {
                 const baseName = `live_photo_${index}_${generateFileName()}`;
 
-                // 触发下载图片
-                await downloadFile(imgUrl, baseName + '.jpg');
-
-                // 稍微延迟一下，防止浏览器拦截连续下载
-                setTimeout(() => {
-                    downloadFile(videoUrl, baseName + '.mp4');
-                }, 2000);
+                // 直接下载视频文件
+                await downloadFile(videoUrl, baseName + '.mp4');
             };
 
             return {
