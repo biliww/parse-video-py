@@ -133,6 +133,9 @@
             <button @click="showHelp = true" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border" title="使用说明">
                 <i class="ph ph-question text-xl"></i>
             </button>
+            <button @click="showLogs = !showLogs" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border" :class="{ 'bg-secondary': showLogs }" title="显示日志">
+                <i class="ph ph-terminal-window text-xl"></i>
+            </button>
             <button @click="toggleTheme" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
                 <i v-if="isDark" class="ph ph-sun text-xl"></i>
                 <i v-else class="ph ph-moon text-xl"></i>
@@ -286,6 +289,18 @@
         </div>
     </div>
 
+    <!-- Log Console -->
+    <div v-if="showLogs" class="fixed bottom-4 right-4 w-80 max-h-60 overflow-y-auto bg-black/90 text-green-400 p-4 rounded-lg text-xs font-mono shadow-xl z-50 border border-green-900 backdrop-blur-sm">
+        <div class="flex justify-between items-center mb-2 border-b border-green-800 pb-1 sticky top-0 bg-black/90">
+            <span class="font-bold">运行日志</span>
+            <button @click="logs = []" class="hover:text-white"><i class="ph ph-trash"></i></button>
+        </div>
+        <div v-for="(log, index) in logs" :key="index" class="mb-1 break-all">
+            <span class="opacity-50 mr-1">[[ log.time ]]</span>
+            <span>[[ log.msg ]]</span>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -303,6 +318,14 @@
             const result = ref(null);
             const isDark = ref(false);
             const showHelp = ref(false);
+            const showLogs = ref(true);
+            const logs = ref([]);
+
+            const addLog = (msg) => {
+                const time = new Date().toLocaleTimeString();
+                logs.value.push({ time, msg });
+                {#console.log(msg);#}
+            };
 
             // 初始化暗黑模式
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -379,27 +402,62 @@
 
             const downloadFile = async (url, filename) => {
                 if(!url) return;
+                addLog(`准备下载: ${url}`);
+
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                if (isIOS) addLog("检测到 iOS 设备");
+
                 try {
+                    addLog("开始 fetch 请求...");
                     const res = await fetch(url);
+                    addLog(`Fetch 响应: ${res.status}`);
+
+                    if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+
                     const blob = await res.blob();
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
+                    addLog(`Blob 获取成功: ${blob.type}, ${blob.size} bytes`);
+
+                    const blobUrl = URL.createObjectURL(blob);
+
+                    {#const link = document.createElement('a');#}
+                    {#link.href = blobUrl;#}
 
                     let extension = '';
                     if (blob.type === 'image/jpeg') extension = '.jpg';
                     else if (blob.type === 'image/png') extension = '.png';
+                    else if (blob.type === 'image/webp') extension = '.webp';
                     else if (blob.type === 'video/mp4') extension = '.mp4';
+                    else if (blob.type === 'image/gif') extension = '.gif';
 
-                    if (!filename.includes('.')) filename += extension;
+                    if (filename && !filename.includes('.')) filename += extension;
+                    addLog(`文件名: ${filename}`);
 
-                    link.download = filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(link.href);
+
+                    {#link.download = filename;#}
+                    {#document.body.appendChild(link);#}
+                    {#link.click();#}
+                    {#document.body.removeChild(link);#}
+                    {#URL.revokeObjectURL(link.href);#}
+
+                      addLog(`开始点击下载`);
+                        // 创建一个临时下载链接并自动触发下载
+                    const downloadLink = document.createElement('a')
+                    downloadLink.href = blobUrl
+                    downloadLink.download = filename // 使用时间戳避免文件名冲突
+                    document.body.appendChild(downloadLink)
+                    downloadLink.click()
+                    document.body.removeChild(downloadLink)
+
                 } catch (e) {
-                    console.warn("Blob download failed, opening in new tab", e);
-                    window.open(url, '_blank');
+                    addLog(`下载失败: ${e.message}`);
+                    console.warn("Download failed", e);
+                    if (isIOS) {
+                        addLog("iOS 跳转 fallback");
+                        window.location.href = url;
+                    } else {
+                        addLog("新窗口打开 fallback");
+                        window.open(url, '_blank');
+                    }
                 }
             };
 
@@ -415,6 +473,8 @@
                 data,
                 isDark,
                 showHelp,
+                showLogs,
+                logs,
                 hasLivePhoto,
                 toggleTheme,
                 handleParse,
