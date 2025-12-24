@@ -7,6 +7,7 @@ WORKDIR /app
 # 复制当前目录下的相关文件到容器的工作目录
 COPY ./parser /app/parser
 COPY ./templates /app/templates
+COPY ./static /app/static
 COPY ./utils /app/utils
 COPY ./requirements.txt /app/
 COPY ./main.py /app/

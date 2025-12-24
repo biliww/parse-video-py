@@ -10,7 +10,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 from fastapi_mcp import FastApiMCP
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI()
+
+# 挂载静态文件目录，支持 favicon.ico
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 mcp = FastApiMCP(app)
 
@@ -103,6 +108,12 @@ async def video_id_parse(source: VideoSource, video_id: str):
             "code": 500,
             "msg": str(err),
         }
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    from fastapi.responses import FileResponse
+    return FileResponse("static/favicon.ico")
 
 
 mcp.setup_server()
