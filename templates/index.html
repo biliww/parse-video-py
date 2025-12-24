@@ -274,11 +274,11 @@
                 </button>
             </div>
             <div class="space-y-4 text-sm text-muted-foreground">
-                <p><strong>目前支持: </strong>抖音/皮皮虾/火山/微视/最右/快手/全民小视频/皮皮搞笑/梨视频/西瓜/微博/虎牙/绿洲/好看/逗拍/美拍/新片场/A站/全民K歌/6间房</p>
+                <p><strong>目前支持: </strong>抖音/火山/微视/最右/快手/皮皮搞笑/梨视频/西瓜/微博/虎牙/绿洲/好看/逗拍/美拍/新片场/全民K歌</p>
                 <div class="bg-secondary/50 p-3 rounded-lg border border-border/50">
                     <p class="mb-2"><strong>温馨提示: </strong></p>
                     <p class="mb-1">1. 粘贴视频地址时<u>无需删除文案</u><small class="text-muted-foreground/80"> 但如果视频链接正确但解析失败请删掉文案后重试</small></p>
-                    <p>2. 点击下载视频跳转时, 可能会被对应网站识别, 报 <u>403 Forbidden</u>, 可以在 下载视频 按钮, 右键复制链接地址, 新开浏览器标签页打开即可</p>
+{#                    <p>2. 点击下载视频跳转时, 可能会被对应网站识别, 报 <u>403 Forbidden</u>, 可以在 下载视频 按钮, 右键复制链接地址, 新开浏览器标签页打开即可</p>#}
                 </div>
             </div>
             <div class="mt-6 flex justify-end">
@@ -286,6 +286,20 @@
                     我知道了
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Download Progress Modal -->
+    <div v-if="downloading" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
+        <div class="bg-card text-card-foreground p-6 rounded-xl shadow-xl border border-border w-full max-w-xs animate-fade-in-up">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-sm">正在下载视频</h3>
+                <span class="text-xs text-muted-foreground">[[ downloadProgress ]]%</span>
+            </div>
+            <div class="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                <div class="bg-primary h-full rounded-full transition-all duration-200 ease-out" :style="{ width: downloadProgress + '%' }"></div>
+            </div>
+            <p class="text-xs text-muted-foreground mt-3 text-center">请勿关闭页面</p>
         </div>
     </div>
 
@@ -320,11 +334,17 @@
             const showHelp = ref(false);
             const showLogs = ref(false);
             const logs = ref([]);
+            const downloading = ref(false);
+            const downloadProgress = ref(0);
 
             const addLog = (msg) => {
-                const time = new Date().toLocaleTimeString();
-                logs.value.push({ time, msg });
-                {#console.log(msg);#}
+                if (showLogs.value){
+                     {#console.log("开始记录日志");#}
+                     const time = new Date().toLocaleTimeString();
+                    logs.value.push({ time, msg });
+                    {#console.log(msg);#}
+                }
+
             };
 
             // 初始化暗黑模式
@@ -414,6 +434,13 @@
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 if (isIOS) addLog("检测到 iOS 设备");
 
+                // 检查是否是视频文件
+                const isVideo = filename && (filename.endsWith('.mp4'));
+                if (isVideo) {
+                    downloading.value = true;
+                    downloadProgress.value = 0;
+                }
+
                 try {
                     addLog("开始 fetch 请求...");
                     const res = await fetch(url);
@@ -421,13 +448,30 @@
 
                     if (!res.ok) throw new Error(`HTTP status ${res.status}`);
 
-                    const blob = await res.blob();
+                    // 获取内容长度
+                    const contentLength = res.headers.get('content-length');
+                    const total = contentLength ? parseInt(contentLength, 10) : 0;
+                    let loaded = 0;
+
+                    const reader = res.body.getReader();
+                    const chunks = [];
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        chunks.push(value);
+                        loaded += value.length;
+
+                        if (isVideo && total) {
+                            downloadProgress.value = Math.round((loaded / total) * 100);
+                        }
+                    }
+
+                    const blob = new Blob(chunks, { type: res.headers.get('content-type') });
                     addLog(`Blob 获取成功: ${blob.type}, ${blob.size} bytes`);
 
                     const blobUrl = URL.createObjectURL(blob);
-
-                    {#const link = document.createElement('a');#}
-                    {#link.href = blobUrl;#}
 
                     let extension = '';
                     if (blob.type === 'image/jpeg') extension = '.jpg';
@@ -439,21 +483,19 @@
                     if (filename && !filename.includes('.')) filename += extension;
                     addLog(`文件名: ${filename}`);
 
-
-                    {#link.download = filename;#}
-                    {#document.body.appendChild(link);#}
-                    {#link.click();#}
-                    {#document.body.removeChild(link);#}
-                    {#URL.revokeObjectURL(link.href);#}
-
-                      addLog(`开始点击下载`);
-                        // 创建一个临时下载链接并自动触发下载
+                    addLog(`开始点击下载`);
+                    // 创建一个临时下载链接并自动触发下载
                     const downloadLink = document.createElement('a')
                     downloadLink.href = blobUrl
                     downloadLink.download = filename // 使用时间戳避免文件名冲突
                     document.body.appendChild(downloadLink)
                     downloadLink.click()
                     document.body.removeChild(downloadLink)
+
+                    // 延迟清理
+                    setTimeout(() => {
+                        URL.revokeObjectURL(blobUrl);
+                    }, 1000);
 
                 } catch (e) {
                     addLog(`下载失败: ${e.message},${e}`);
@@ -471,6 +513,13 @@
                     } else {
                         addLog("新窗口打开 fallback");
                         window.open(url, '_blank');
+                    }
+                } finally {
+                    if (isVideo) {
+                        setTimeout(() => {
+                            downloading.value = false;
+                            downloadProgress.value = 0;
+                        }, 1000);
                     }
                 }
             };
@@ -501,7 +550,9 @@
                 handleParse,
                 downloadFile,
                 downloadLivePhoto,
-                generateFileName
+                generateFileName,
+                downloading,
+                downloadProgress
             };
         }
     }).mount('#app');
