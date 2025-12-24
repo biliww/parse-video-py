@@ -8,7 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "uqdu9n049r");
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -105,6 +111,16 @@
             scrollbar-width: none;
         }
 
+        @keyframes modalFadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -45%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -114,6 +130,16 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .animate-modal-fade-in-up {
+            animation: modalFadeInUp 0.5s ease-out forwards;
         }
         .animate-fade-in-up {
             animation: fadeInUp 0.5s ease-out forwards;
@@ -130,7 +156,7 @@
             <p class="text-sm text-muted-foreground">支持抖音、小红书等常见媒体 无水印 视频/图集/实况解析</p>
         </div>
         <div class="flex items-center gap-2">
-            <button @click="showHelp = true" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border" title="使用说明">
+            <button @click="toggleHelp" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
                 <i class="ph ph-question text-xl"></i>
             </button>
             <button @click="toggleTheme" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
@@ -139,6 +165,32 @@
             </button>
         </div>
     </div>
+
+    <teleport to="body">
+        <div v-if="showHelp" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] animate-fade-in" @click="toggleHelp"></div>
+        <div v-if="showHelp"
+             class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg bg-card border border-border rounded-xl shadow-lg z-[1000] p-6 animate-modal-fade-in-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">使用说明</h2>
+                <button @click="toggleHelp" class="p-1 rounded-md hover:bg-secondary transition-colors">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            <div class="text-sm text-foreground/80 space-y-4">
+                <p><strong>目前支持:</strong> 抖音/皮皮虾/火山/微视/最右/快手/全民小视频/皮皮搞笑/梨视频/西瓜/微博/虎牙/绿洲/好看/逗拍/美拍/新片场/A站/全民K歌/6间房</p>
+                <div>
+                    <p class="font-semibold mb-1">温馨提示:</p>
+                    <ul class="list-decimal list-inside space-y-1 text-foreground/70">
+                        <li>粘贴视频地址时<u>无需删除文案</u>
+                            <small class="opacity-70"> (但如果视频链接正确但解析失败请删掉文案后重试)</small>
+                        </li>
+                        <li>点击下载视频跳转时, 可能会被对应网站识别, 报 <u>403 Forbidden</u>, 可以在 下载视频 按钮, 右键复制链接地址, 新开浏览器标签页打开即可
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </teleport>
 
     <div class="flex flex-col sm:flex-row gap-3">
         <input
@@ -260,32 +312,6 @@
         <p>输入链接开始解析</p>
     </div>
 
-    <!-- Help Modal -->
-    <div v-if="showHelp" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" style="display: none;" :style="{ display: showHelp ? 'flex' : 'none' }">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="showHelp = false"></div>
-        <div class="relative w-full max-w-lg transform rounded-xl bg-card p-6 text-left shadow-xl transition-all border border-border animate-fade-in-up">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold leading-6">使用说明</h3>
-                <button @click="showHelp = false" class="rounded-md p-1 hover:bg-secondary transition-colors">
-                    <i class="ph ph-x text-lg"></i>
-                </button>
-            </div>
-            <div class="space-y-4 text-sm text-muted-foreground">
-                <p><strong>目前支持: </strong>抖音/皮皮虾/火山/微视/最右/快手/全民小视频/皮皮搞笑/梨视频/西瓜/微博/虎牙/绿洲/好看/逗拍/美拍/新片场/A站/全民K歌/6间房</p>
-                <div class="bg-secondary/50 p-3 rounded-lg border border-border/50">
-                    <p class="mb-2"><strong>温馨提示: </strong></p>
-                    <p class="mb-1">1. 粘贴视频地址时<u>无需删除文案</u><small class="text-muted-foreground/80"> 但如果视频链接正确但解析失败请删掉文案后重试</small></p>
-                    <p>2. 点击下载视频跳转时, 可能会被对应网站识别, 报 <u>403 Forbidden</u>, 可以在 下载视频 按钮, 右键复制链接地址, 新开浏览器标签页打开即可</p>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button @click="showHelp = false" class="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                    我知道了
-                </button>
-            </div>
-        </div>
-    </div>
-
 </div>
 
 <script>
@@ -303,6 +329,10 @@
             const result = ref(null);
             const isDark = ref(false);
             const showHelp = ref(false);
+
+            const toggleHelp = () => {
+                showHelp.value = !showHelp.value;
+            };
 
             // 初始化暗黑模式
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -414,8 +444,9 @@
                 error,
                 data,
                 isDark,
-                showHelp,
                 hasLivePhoto,
+                showHelp,
+                toggleHelp,
                 toggleTheme,
                 handleParse,
                 downloadFile,
