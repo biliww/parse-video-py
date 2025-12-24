@@ -115,6 +115,13 @@
                 transform: translateY(0);
             }
         }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
         .animate-fade-in-up {
             animation: fadeInUp 0.5s ease-out forwards;
         }
@@ -129,12 +136,41 @@
             <h1 class="text-2xl font-bold tracking-tight">媒体无水印解析</h1>
             <p class="text-sm text-muted-foreground">支持抖音、小红书等常见媒体 无水印 视频/图集/实况解析</p>
         </div>
-        <button @click="toggleTheme" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
-            <i v-if="isDark" class="ph ph-sun text-xl"></i>
-            <i v-else class="ph ph-moon text-xl"></i>
-        </button>
+        <div class="flex items-center gap-2">
+            <button @click="toggleHelp" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
+                <i class="ph ph-question text-xl"></i>
+            </button>
+            <button @click="toggleTheme" class="p-2 rounded-md hover:bg-secondary transition-colors border border-border">
+                <i v-if="isDark" class="ph ph-sun text-xl"></i>
+                <i v-else class="ph ph-moon text-xl"></i>
+            </button>
+        </div>
     </div>
 
+    <div v-if="showHelp" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-fade-in" @click="toggleHelp"></div>
+    <div v-if="showHelp"
+         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg bg-card border border-border rounded-xl shadow-lg z-50 p-6 animate-fade-in-up">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">使用说明</h2>
+            <button @click="toggleHelp" class="p-1 rounded-md hover:bg-secondary transition-colors">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+        </div>
+        <div class="text-sm text-foreground/80 space-y-4">
+            <p><strong>目前支持:</strong> 抖音/皮皮虾/火山/微视/最右/快手/全民小视频/皮皮搞笑/梨视频/西瓜/微博/虎牙/绿洲/好看/逗拍/美拍/新片场/A站/全民K歌/6间房</p>
+            <div>
+                <p class="font-semibold mb-1">温馨提示:</p>
+                <ul class="list-decimal list-inside space-y-1 text-foreground/70">
+                    <li>粘贴视频地址时<u>无需删除文案</u>
+                        <small class="opacity-70"> (但如果视频链接正确但解析失败请删掉文案后重试)</small>
+                    </li>
+                    <li>点击下载视频跳转时, 可能会被对应网站识别, 报 <u>403 Forbidden</u>, 可以在 下载视频 按钮, 右键复制链接地址, 新开浏览器标签页打开即可
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
     <div class="flex flex-col sm:flex-row gap-3">
         <input
             v-model="inputUrl"
@@ -271,6 +307,11 @@
             const error = ref('');
             const result = ref(null);
             const isDark = ref(false);
+            const showHelp = ref(false);
+
+            const toggleHelp = () => {
+                showHelp.value = !showHelp.value;
+            };
 
             // 初始化暗黑模式
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -383,6 +424,8 @@
                 data,
                 isDark,
                 hasLivePhoto,
+                showHelp,
+                toggleHelp,
                 toggleTheme,
                 handleParse,
                 downloadFile,
