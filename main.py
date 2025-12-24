@@ -110,12 +110,6 @@ async def video_id_parse(source: VideoSource, video_id: str):
         }
 
 
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    from fastapi.responses import FileResponse
-    return FileResponse("static/favicon.ico")
-
-
 mcp.setup_server()
 
 if __name__ == "__main__":
