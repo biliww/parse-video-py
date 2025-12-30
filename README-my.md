@@ -9,3 +9,14 @@ JavaScript 逻辑:
 计算了从点击位置到屏幕最远角的距离作为扩散半径。
 使用 document.documentElement.animate 对 ::view-transition-new(root) 伪元素执行 clip-path 动画，实现圆形扩散效果。
 保留了对不支持该 API 浏览器的兼容性处理（直接切换）。
+
+
+
+抖音抓去:
+1.判断页面, 直接页面复制成 curl (因为抖音平台会根据参数不同 而返回不同的结果,参数不对 有可能不反悔)
+影响参数 有可能是 请求头的 设备, cookid 等
+
+\u0026 -> &
+
+
+playApi 字段

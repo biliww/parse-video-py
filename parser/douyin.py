@@ -297,7 +297,9 @@ class DouYin(BaseParser):
             data = response.json()
             return data if data.get("aweme_details") else None
 
-        except Exception:
+
+        except Exception as e:
+            print(f"获取图集信息时发生异常: {e}")
             return None
 
     def _generate_fixed_length_numeric_id(self, length: int) -> str:
