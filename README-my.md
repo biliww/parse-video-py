@@ -20,3 +20,10 @@ JavaScript 逻辑:
 
 
 playApi 字段
+
+
+
+
+docker 部署
+
+biliw/parse-video-py:latest

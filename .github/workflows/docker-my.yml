@@ -14,6 +14,8 @@ jobs:
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
+    outputs:
+      docker_image_address: ${{ steps.image_meta.outputs.docker_image_address }}
     steps:
 
       - name: Checkout Github Code
@@ -30,6 +32,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -42,3 +47,8 @@ jobs:
           tags: ${{ env.image_name_build }}/${{ env.IMAGE_NAME }}
           platforms: |
             linux/amd64
+            linux/arm64/v8
+
+      - name: Export Docker image address
+        id: image_meta
+        run: echo "docker_image_address=${{ env.image_name_build }}/${{ env.IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
